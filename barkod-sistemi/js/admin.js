@@ -1,21 +1,10 @@
 // js/admin.js
 let products = JSON.parse(localStorage.getItem('products')) || [];
 
-// Sayfa yüklendiğinde ürünleri listele
+// Sayfa yüklendiğinde
 document.addEventListener('DOMContentLoaded', function() {
     loadProducts();
-    
-    // Örnek veri ekleme butonu (isteğe bağlı)
-    if (products.length === 0) {
-        document.getElementById('productList').innerHTML = `
-            <div style="text-align: center; padding: 20px; background: #fff3cd; border-radius: 10px;">
-                <p>Henüz ürün yok. İlk ürününüzü ekleyin veya:</p>
-                <button onclick="addSampleProducts()" style="background: #ff9800; margin-top: 10px;">
-                    🎯 Örnek Ürünler Ekle
-                </button>
-            </div>
-        `;
-    }
+    updateProductCount();
 });
 
 function addProduct() {
@@ -53,7 +42,12 @@ function loadProducts() {
     const productList = document.getElementById('productList');
     
     if (products.length === 0) {
-        productList.innerHTML = '<p>Henüz ürün bulunmamaktadır.</p>';
+        productList.innerHTML = `
+            <div style="text-align: center; padding: 40px; background: #f5f5f5; border-radius: 10px;">
+                <h3>📭 Henüz ürün yok</h3>
+                <p>İlk ürününüzü ekleyin veya örnek ürünler ekleyin.</p>
+            </div>
+        `;
         return;
     }
 
@@ -63,7 +57,7 @@ function loadProducts() {
         const productDiv = document.createElement('div');
         productDiv.className = 'product-item';
         productDiv.innerHTML = `
-            <strong>${product.name}</strong> - ${product.price} TL
+            <strong>${product.name}</strong> - ${product.price.toFixed(2)} TL
             <br><small>📋 Barkod: ${product.barcode}</small>
             ${product.description ? `<br><small>📝 ${product.description}</small>` : ''}
             <br>
@@ -73,14 +67,21 @@ function loadProducts() {
         `;
         productList.appendChild(productDiv);
     });
+    
+    updateProductCount();
+}
+
+function updateProductCount() {
+    document.getElementById('productCount').textContent = products.length;
 }
 
 function deleteProduct(index) {
     if (confirm('❓ Bu ürünü silmek istediğinizden emin misiniz?')) {
+        const deletedProduct = products[index];
         products.splice(index, 1);
         saveProducts();
         loadProducts();
-        alert('✅ Ürün silindi!');
+        alert(`✅ "${deletedProduct.name}" silindi!`);
     }
 }
 
@@ -96,6 +97,11 @@ function clearForm() {
 }
 
 function exportProducts() {
+    if (products.length === 0) {
+        alert('❌ Dışa aktarılacak ürün yok!');
+        return;
+    }
+    
     const dataStr = JSON.stringify(products, null, 2);
     const dataBlob = new Blob([dataStr], {type: 'application/json'});
     
@@ -105,15 +111,6 @@ function exportProducts() {
     link.click();
     
     alert('📥 Ürünler JSON dosyası olarak indirildi!');
-}
-
-function clearAll() {
-    if (confirm('🚨 TÜM ürünleri silmek istediğinizden emin misiniz? Bu işlem geri alınamaz!')) {
-        products = [];
-        saveProducts();
-        loadProducts();
-        alert('✅ Tüm ürünler silindi!');
-    }
 }
 
 function addSampleProducts() {
@@ -135,11 +132,37 @@ function addSampleProducts() {
             name: "Uludağ Gazoz",
             price: 6.00,
             description: "Maden suyu"
+        },
+        {
+            barcode: "1234567890123",
+            name: "Test Ürünü",
+            price: 15.99,
+            description: "Bu bir test ürünüdür"
         }
     ];
     
-    products = [...products, ...sampleProducts];
+    // Sadece benzersiz ürünleri ekle
+    sampleProducts.forEach(sample => {
+        if (!products.find(p => p.barcode === sample.barcode)) {
+            products.push(sample);
+        }
+    });
+    
     saveProducts();
     loadProducts();
-    alert('🎯 3 örnek ürün eklendi!');
+    alert('🎯 Örnek ürünler eklendi!');
+}
+
+function clearAll() {
+    if (products.length === 0) {
+        alert('❌ Zaten hiç ürün yok!');
+        return;
+    }
+    
+    if (confirm('🚨 TÜM ürünleri silmek istediğinizden emin misiniz? Bu işlem geri alınamaz!')) {
+        products = [];
+        saveProducts();
+        loadProducts();
+        alert('✅ Tüm ürünler silindi!');
+    }
 }
